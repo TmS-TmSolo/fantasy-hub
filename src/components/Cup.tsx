@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-// src/components/Cup.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -48,9 +47,7 @@ export default function Cup() {
     setPics(pUrls);
   }
 
-  useEffect(() => {
-    void listMedia();
-  }, []);
+  useEffect(() => { void listMedia(); }, []);
 
   async function upload(kind: 'video' | 'photo', file: File) {
     if (!file) return;
@@ -65,10 +62,7 @@ export default function Cup() {
       headers: { 'x-upload-token': pass },
       body: form,
     });
-    if (!res.ok) {
-      alert('Upload failed');
-      return;
-    }
+    if (!res.ok) { alert('Upload failed'); return; }
     await listMedia();
   }
 
@@ -76,9 +70,7 @@ export default function Cup() {
     <div className="mx-auto max-w-6xl px-4 py-6 space-y-10">
       <section className="card card-glow p-6">
         <h1 className="text-3xl font-display">The Big Cock Cup</h1>
-        <p className="text-muted mt-1">
-          Eternal glory for league champions. Add photos and hype videos of the trophy here.
-        </p>
+        <p className="text-muted mt-1">Eternal glory for league champions. Add photos and hype videos of the trophy here.</p>
       </section>
 
       <section className="space-y-4">
@@ -118,24 +110,14 @@ export default function Cup() {
           />
           <label className="flex items-center gap-2">
             <span className="text-sm w-24">Video:</span>
-            <input
-              type="file"
-              accept="video/*"
-              onChange={(e) => e.target.files?.[0] && upload('video', e.target.files[0])}
-            />
+            <input type="file" accept="video/*" onChange={(e) => e.target.files?.[0] && upload('video', e.target.files[0])} />
           </label>
           <label className="flex items-center gap-2">
             <span className="text-sm w-24">Photo:</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files?.[0] && upload('photo', e.target.files[0])}
-            />
+            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload('photo', e.target.files[0])} />
           </label>
         </div>
-        <p className="text-xs text-muted">
-          Uses your existing /api/upload with UPLOAD_TOKEN. Stored in bucket “Videos” under trophy/.
-        </p>
+        <p className="text-xs text-muted">Uses your existing /api/upload with UPLOAD_TOKEN. Stored in bucket “Videos” under trophy/.</p>
       </section>
 
       <section className="space-y-3" id="videos">
@@ -172,11 +154,7 @@ export default function Cup() {
 }
 
 function Th({ children, className = '' }: CellProps) {
-  return (
-    <th className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 ${className}`}>
-      {children}
-    </th>
-  );
+  return <th className={`px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 ${className}`}>{children}</th>;
 }
 function Td({ children, className = '' }: CellProps) {
   return <td className={`px-3 py-2 text-sm text-slate-100 ${className}`}>{children}</td>;

@@ -16,7 +16,7 @@ function CupPage() {
 export default function HomePage() {
   return (
     <>
-      <NavBar />
+     
 
       <Hero />
 
