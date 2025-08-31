@@ -1,11 +1,8 @@
 // src/app/api/chat/route.ts
-import path from 'node:path';
-import fs from 'node:fs/promises';
-
 export const runtime = 'nodejs';
 
 type Player = {
-  name: string;              // "George Kittle"
+  name: string;
   team?: string;
   position?: string;
   points?: number;
@@ -25,25 +22,35 @@ type Player = {
 
 const FALLBACK: Player[] = [
   { name: 'David Njoku', team: 'CLE', position: 'TE', points_half: 10.1, ceiling: 17.5, floor: 4.6 },
-  { name: 'George Kittle', team: 'SF',  position: 'TE', points_half:  9.4, ceiling: 16.2, floor: 4.2 },
+  { name: 'George Kittle', team: 'SF', position: 'TE', points_half:  9.4, ceiling: 16.2, floor: 4.2 },
   { name: 'Tyreek Hill',   team: 'MIA', position: 'WR', points_half: 18.9, ceiling: 29.0, floor: 9.0 },
   { name: 'Drake London',  team: 'ATL', position: 'WR', points_half: 12.6, ceiling: 20.2, floor: 6.7 },
 ];
 
+// ---------- parsing ----------
 function last(name: string): string {
   const parts = name.trim().split(/\s+/);
   return (parts[parts.length - 1] || '').toLowerCase();
 }
 
 function parseLastNames(q: string): string[] {
-  const parts = q
-    .split(/,|\bor\b|\/|&|\n/gi)
+  // split first, then trim filler per piece
+  const parts = (' ' + String(q || '') + ' ')
+    .toLowerCase()
+    .split(/[,\|\/;&:]+|\sor\s|\svs\s|\sover\s|\n/gi)
     .map(s => s.trim())
     .filter(Boolean);
 
+  const FILLER = /\b(start|sit|bench|flex|drop|trade|for|versus|choose|pick|between|over|and|please|who|should|i)\b/g;
+
   const out: string[] = [];
   const seen = new Set<string>();
-  for (const p of parts) {
+
+  for (const p0 of (parts.length ? parts : [String(q || '')])) {
+    const p = (' ' + p0 + ' ').replace(FILLER, ' ').trim();
+    if (!p) continue;
+
+    // keep last word, drop non-letters, block obvious first names by frequency later if needed
     const tokens = p.split(/\s+/).filter(Boolean);
     const l = (tokens[tokens.length - 1] || '').replace(/[^a-z'-]/gi, '').toLowerCase();
     if (l && !seen.has(l)) { seen.add(l); out.push(l); }
@@ -59,6 +66,7 @@ function pickScoring(q: string): 'half' | 'ppr' | 'std' {
   return 'half';
 }
 
+// ---------- helpers ----------
 function getVal(obj: any, keys: string[]): number | undefined {
   for (const k of keys) {
     const v1 = obj?.[k];
@@ -88,27 +96,32 @@ function normalizePlayers(players: Player[]): (Player & { last: string })[] {
   }));
 }
 
-async function loadProjections(): Promise<{ players: Player[]; source: 'file'|'fallback' }> {
-  const tryPaths = [
-    path.join(process.cwd(), 'src', 'data', 'projections.json'),
-    path.join(process.cwd(), 'data', 'projections.json'),
-  ];
-  for (const p of tryPaths) {
+// ---------- projections loader (no fs) ----------
+async function loadProjections(): Promise<{ players: Player[]; source: 'url'|'import'|'fallback' }> {
+  // 1) Public URL (recommended: PROJECTIONS_URL -> JSON array or {players:[...]})
+  if (process.env.PROJECTIONS_URL) {
     try {
-      const raw = await fs.readFile(p, 'utf8');
-      const json = JSON.parse(raw);
-      const arr: Player[] = Array.isArray(json) ? json : (json.players ?? json);
-      if (Array.isArray(arr) && arr.length) return { players: arr, source: 'file' };
-    } catch { /* continue */ }
+      const res = await fetch(process.env.PROJECTIONS_URL, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        const arr: Player[] = Array.isArray(json) ? json : (json.players ?? json);
+        if (Array.isArray(arr) && arr.length) return { players: arr, source: 'url' };
+      }
+    } catch {}
   }
+  // 2) Bundle-time import (Next will package this)
+  try {
+    const mod: any = await import('@/data/projections.json');
+    const arr: Player[] = Array.isArray(mod.default) ? mod.default : (mod.default?.players ?? mod.default);
+    if (Array.isArray(arr) && arr.length) return { players: arr, source: 'import' };
+  } catch {}
+
+  // 3) Fallback few players
   return { players: FALLBACK, source: 'fallback' };
 }
 
-function rankCandidates(
-  names: string[],
-  players: Player[],
-  scoring: 'half'|'ppr'|'std'
-) {
+// ---------- ranking ----------
+function rankCandidates(names: string[], players: Player[], scoring: 'half'|'ppr'|'std') {
   const metricKeys = metricKeysFor(scoring);
   const cKeys = ceilingKeys();
   const fKeys = floorKeys();
@@ -146,8 +159,8 @@ function formatReply(
   ranked: (Player & { _val?: number; _ceil?: number; _floor?: number })[],
   scoring: 'half'|'ppr'|'std',
   metricUsed: string
-): { text: string; features: string[] } {
-  if (!ranked.length) return { text: 'No matching players found in projections.', features: [] };
+): { reply: string; features: string[] } {
+  if (!ranked.length) return { reply: 'No matching players found in projections.', features: [] };
 
   const label = scoring === 'ppr' ? 'PPR' : scoring === 'half' ? '0.5 PPR' : 'Standard';
   const order = ranked.map(p => p.name).join(' > ');
@@ -171,54 +184,38 @@ function formatReply(
     feats.push(`floor_delta=${floor.toFixed(1)}pts`);
   }
 
-  const text = `${headline}. ${label}.\nOrder: ${order}`;
-  return { text, features: feats };
+  const reply = `${headline}. ${label}.\nOrder: ${order}`;
+  return { reply, features: feats };
 }
 
+// ---------- main ----------
 async function answer(q: string, explain?: boolean) {
   const names = parseLastNames(q);
   const scoring = pickScoring(q);
   const { players, source } = await loadProjections();
 
   if (names.length < 2) {
-    const text = 'Provide 2–6 last names.';
-    return explain
-      ? { reply: text, source: 'projections+rules', features: [`scoring=${scoring}`, `names=${names.length}`] }
-      : text;
+    const reply = 'Provide 2–6 last names.';
+    return explain ? { reply, source: 'rules', features: [`scoring=${scoring}`, `names=${names.length}`] } : { reply };
   }
 
   const { ranked, metricKeys } = rankCandidates(names, players, scoring);
   const metricUsed = metricKeys[0];
-  const { text, features } = formatReply(ranked as any, scoring, metricUsed);
+  const { reply, features } = formatReply(ranked as any, scoring, metricUsed);
 
-  if (explain) return { reply: text, source: source === 'file' ? 'projections+rules' : 'fallback+rules', features };
-  return text;
-}
-
-function cleanReply(raw: string): string {
-  try {
-    const j = JSON.parse(raw);
-    if (typeof j === 'string') return j;
-    return j.reply ?? j.message ?? j.text ?? raw;
-  } catch {
-    return raw;
-  }
+  return explain ? { reply, source, features } : { reply };
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const q = String(body?.q ?? '');
     const explain = !!body?.explain;
 
-    const ans = await answer(q, explain);
-    if (typeof ans === 'string') {
-      // ensure we never leak {"reply": "..."} to client if upstream proxies exist
-      return new Response(cleanReply(ans), { headers: { 'content-type': 'text/plain; charset=utf-8' } });
-    }
-    return new Response(JSON.stringify(ans), { headers: { 'content-type': 'application/json' } });
+    const res = await answer(q, explain);
+    return Response.json(res);
   } catch {
-    return new Response('Bad Request', { status: 400 });
+    return Response.json({ reply: 'Bad Request' }, { status: 400 });
   }
 }
 
@@ -226,9 +223,6 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || searchParams.get('names') || '';
   const explain = searchParams.get('explain') === '1';
-  const ans = await answer(q, explain);
-  if (typeof ans === 'string') {
-    return new Response(ans, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
-  }
-  return new Response(JSON.stringify(ans), { headers: { 'content-type': 'application/json' } });
+  const res = await answer(q, explain);
+  return Response.json(res);
 }
