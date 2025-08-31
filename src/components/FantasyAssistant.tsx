@@ -1,113 +1,96 @@
-// src/components/FantasyAssistant.tsx
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
-type Role = 'user' | 'assistant';
-type Msg = { role: Role; content: string };
-
-function cleanReply(raw: string): string {
-  try {
-    const j = JSON.parse(raw);
-    if (typeof j === 'string') return j;
-    return j.reply ?? j.message ?? j.text ?? raw;
-  } catch {
-    return raw;
-  }
-}
+type PlayerIn = {
+  name: string;
+  team?: string;
+  position: "QB" | "RB" | "WR" | "TE" | "DST" | "K";
+  injury?: "Q" | "D" | "O" | "";
+};
+type Scoring = "STD" | "HALF" | "PPR";
 
 export default function FantasyAssistant() {
-  const [input, setInput] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: 'assistant', content: 'Start/Sit Chat ready. Give me some names.' },
-  ]);
-  const [usePaid, setUsePaid] = useState(false);
-  const [pin, setPin] = useState('');
-  const endRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+  const [scoring, setScoring] = useState<Scoring>("PPR");
+  const [text, setText] = useState<string>("QB: Jalen Hurts\nRB: Christian McCaffrey\nRB: Breece Hall\nWR: Tyreek Hill\nWR: Amon-Ra St. Brown\nTE: Sam LaPorta\nFLEX: De'Von Achane\nDST: Eagles\nK: Jake Elliott");
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function sendChat() {
-    const q = input.trim();
-    if (!q || busy) return;
-    setInput('');
-    setBusy(true);
-    setMsgs(m => [...m, { role: 'user', content: q }, { role: 'assistant', content: '' }]);
+  function parseRoster(s: string): PlayerIn[] {
+    return s.split("\n").map((line) => {
+      const [posRaw, nameRaw] = line.split(":").map(v => v?.trim() ?? "");
+      const pos = (posRaw?.toUpperCase() ?? "") as PlayerIn["position"];
+      const name = nameRaw ?? "";
+      if (!pos || !name) return null;
+      return { position: pos, name };
+    }).filter(Boolean) as PlayerIn[];
+  }
 
+  async function run() {
+    setLoading(true);
+    setResult(null);
     try {
-      const headers: Record<string, string> = {
-        'content-type': 'application/json',
-        accept: 'text/plain, application/json',
-      };
-      if (usePaid && pin) { headers['x-ai-mode'] = 'live'; headers['authorization'] = `Bearer ${pin}`; }
-
-      const res = await fetch('/api/chat', { method: 'POST', headers, body: JSON.stringify({ q }) });
-      const txt = await res.text();
-      const msg = cleanReply(txt) || '(no reply)';
-      setMsgs(m => { const out = [...m]; out[out.length - 1] = { role: 'assistant', content: msg }; return out; });
-    } catch {
-      setMsgs(m => { const out = [...m]; out[out.length - 1] = { role: 'assistant', content: 'Local error. Try again.' }; return out; });
+      const roster = parseRoster(text);
+      const res = await fetch("/api/start-sit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ roster, scoring }),
+      });
+      const json = await res.json();
+      setResult(json);
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
-  function onKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-  }
-
   return (
-    <div id="assistant" className="space-y-4">
-      <h3 className="text-base font-semibold">Start/Sit Chat</h3>
-
-      <div className="flex flex-col gap-3">
-        <div className="h-[380px] overflow-y-auto rounded-2xl border border-indigo-800 bg-indigo-950 p-4">
-          {msgs.map((m, i) => (
-            <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
-              <div
-                className={
-                  'inline-block max-w-[90%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ' +
-                  (m.role === 'user' ? 'bg-gray-100 text-gray-900' : 'bg-white text-gray-900')
-                }
-              >
-                {m.content}
-              </div>
-            </div>
-          ))}
-          <div ref={endRef} />
-        </div>
-
-        <div className="flex items-center gap-3">
-          <textarea
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={onKey}
-            placeholder="e.g., Start Gibbs or Cook?"
-            className="min-h-[56px] flex-1 resize-none rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button
-            onClick={sendChat}
-            disabled={busy}
-            className="rounded-2xl bg-indigo-600 px-5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {busy ? 'Thinking' : 'Send'}
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={usePaid} onChange={e => setUsePaid(e.target.checked)} />
-            Use paid
-          </label>
-          {usePaid && (
-            <input
-              className="border rounded px-2 py-1 text-sm"
-              placeholder="PIN"
-              value={pin}
-              onChange={e => setPin(e.target.value)}
-            />
-          )}
-        </div>
+    <div className="space-y-4">
+      <div className="flex gap-3 items-center">
+        <label htmlFor="scoring-select" className="text-sm">Scoring</label>
+        <select
+          id="scoring-select"
+          className="rounded-md border border-white/20 bg-transparent px-2 py-1"
+          value={scoring}
+          onChange={(e) => setScoring(e.target.value as Scoring)}
+        >
+          <option value="STD">STD</option>
+          <option value="HALF">HALF</option>
+          <option value="PPR">PPR</option>
+        </select>
+        <button className="ml-auto px-3 py-1 rounded-md bg-[var(--accent)] text-black" onClick={run} disabled={loading}>
+          {loading ? "Scoring..." : "Start/Sit"}
+        </button>
       </div>
+
+      <label htmlFor="roster-textarea" className="text-sm">Roster</label>
+      <textarea
+        id="roster-textarea"
+        className="w-full h-40 rounded-md border border-white/20 bg-transparent p-2 text-sm"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Enter your roster here..."
+        title="Roster input"
+      />
+
+      {result && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="card p-3">
+            <h3 className="font-semibold mb-2">Starters</h3>
+            <ul className="space-y-1 text-sm">
+              {result.starters?.map((r: any) => (
+                <li key={r.name}>{r.position}: {r.name} — {r.score.toFixed(2)}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="card p-3">
+            <h3 className="font-semibold mb-2">Bench</h3>
+            <ul className="space-y-1 text-sm">
+              {result.bench?.map((r: any) => (
+                <li key={r.name}>{r.position}: {r.name} — {r.score.toFixed(2)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

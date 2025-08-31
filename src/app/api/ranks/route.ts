@@ -16,6 +16,8 @@ const role = process.env.SUPABASE_SERVICE_ROLE!; // server-only
 const db   = createClient(url, role, { auth: { persistSession: false } });
 
 type Row = Record<string, string>;
+type RankRow = Record<string, string>;
+
 
 export async function GET(_req: NextRequest) {
   try {

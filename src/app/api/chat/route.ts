@@ -20,6 +20,12 @@ type Player = {
   projections?: Record<string, unknown>;
 };
 
+type Msg = { role: 'system'|'user'|'assistant'; content: string };
+type ChatBody = { messages: Msg[]; system?: string };
+// catch blocks: (err: unknown)
+// streams: (chunk: string | Uint8Array)
+
+
 const FALLBACK: Player[] = [
   { name: 'David Njoku', team: 'CLE', position: 'TE', points_half: 10.1, ceiling: 17.5, floor: 4.6 },
   { name: 'George Kittle', team: 'SF', position: 'TE', points_half:  9.4, ceiling: 16.2, floor: 4.2 },

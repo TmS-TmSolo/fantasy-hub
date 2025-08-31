@@ -1,11 +1,39 @@
 @import "tailwindcss";
 
-/* Theme */
+
+@import "tailwindcss";
+
 :root{
-  --bg:#0b0f1a; --card:#0f1629; --card-2:#0b1426;
-  --text:#e6ecff; --muted:#9fb0d1;
-  --accent:#ff2d55; --accent-2:#3fd6ff; --accent-3:#7CFF6B;
+  --bg:#0b1220;
+  --surface:#111a2b;
+  --card:#0e1627;
+  --text:#e6eefb;
+  --muted:#9db2d7;
+  --accent:#4cc9f0;
 }
+
+html,body{ background:var(--bg); color:var(--text); }
+
+.card{
+  border-radius: 1rem; /* rounded-2xl */
+  border: 1px solid rgba(255,255,255,0.1); /* border-white/10 */
+  background: var(--card);
+}
+.card-glow{ box-shadow:0 0 0 1px #ffffff1a inset, 0 10px 30px #00000080; }
+.text-muted{ color:var(--muted); }
+.accent-2{ color:var(--accent); }
+
+
+/* utilities used in your components */
+.card {
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.card-glow { box-shadow: 0 0 0 1px #ffffff1a inset, 0 10px 30px #00000080; }
+.text-muted { color: var(--color-muted); }
+.accent-2 { color: var(--color-accent); }
+
 
 .font-sans{ font-family: var(--font-sans), ui-sans-serif, system-ui; }
 .font-display{ font-family: var(--font-display), ui-sans-serif, system-ui; }

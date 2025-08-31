@@ -43,6 +43,8 @@ const stats: Stat[] = [
   { team:'Pirates of the Minge', managers:'andy fox, Brockton Gates', pf:0,pa:0,div:'0-0-0',home:'0-0-0',away:'0-0-0',strk:'None',moves:0 },
 ];
 
+
+
 function Th({ children, className='' }: any){
   return <th className={`px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide ${className}`}>{children}</th>;
 }
