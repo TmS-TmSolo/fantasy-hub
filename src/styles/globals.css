@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+html, body, :root { height: 100%; }
+
+/* accent text helpers */
+.text-accent   { color: var(--accent); }
+.text-accent-2 { color: var(--accent-2); }
+.text-accent-3 { color: var(--accent-3); }

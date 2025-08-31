@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Theme */
+:root{
+  --bg:#0b0f1a; --card:#0f1629; --card-2:#0b1426;
+  --text:#e6ecff; --muted:#9fb0d1;
+  --accent:#ff2d55; --accent-2:#3fd6ff; --accent-3:#7CFF6B;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.font-sans{ font-family: var(--font-sans), ui-sans-serif, system-ui; }
+.font-display{ font-family: var(--font-display), ui-sans-serif, system-ui; }
+
+/* Backgrounds */
+.bg-bg{
+  background:
+    radial-gradient(1400px 700px at 15% -10%, rgba(65,225,255,.22) 0%, transparent 65%),
+    radial-gradient(1200px 600px at 85% -10%, rgba(255,59,107,.20) 0%, transparent 70%),
+    #151b34;
+}
+.text-muted{ color: var(--muted); }
+
+/* Cards */
+.card{ background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%); border:1px solid rgba(255,255,255,0.06); border-radius: 16px; }
+.card-glow{ box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); }
+
+/* Buttons (no @apply) */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:16px; padding:12px 20px; font-size:14px; font-weight:600;
+  transition:all .2s ease;
+}
+.btn-primary{ background: linear-gradient(90deg, var(--accent), #ff5f3b); color:#fff; }
+.btn-primary:hover{ filter:brightness(1.08); }
+.btn-ghost{ border:1px solid rgba(255,255,255,.12); color:var(--text); }
+.btn-ghost:hover{ background:rgba(255,255,255,.05); }
+
+/* Hero */
+.gradient-hero{
+  background:
+    radial-gradient(800px 280px at 70% 0%, rgba(63,214,255,.25) 0%, transparent 70%),
+    radial-gradient(800px 280px at 20% 0%, rgba(255,45,85,.25) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 40%);
+}
+.shine{ background: linear-gradient(90deg, #fff, #aee3ff, #fff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+/* Ticker */
+.ticker{ overflow:hidden; white-space:nowrap; }
+.ticker-track{ display:inline-block; animation: ticker 24s linear infinite; }
+@keyframes ticker { from{ transform: translateX(0);} to{ transform: translateX(-50%);} }
+
+/* Misc */
+.logo-swatch{
+  background: conic-gradient(from 180deg, var(--accent), var(--accent-2));
+  border-radius: .375rem;
+  height: 1.5rem; width: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ===== Assistant overrides ===== */
+/* Make all Assistant text black */
+#assistant textarea,
+#assistant input,
+#assistant .bg-indigo-800,
+#assistant .bg-indigo-600 { color:#000; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* Black placeholders */
+#assistant textarea::placeholder,
+#assistant input::placeholder { color: rgba(0,0,0,.6); }
