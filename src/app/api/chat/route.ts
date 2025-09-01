@@ -1,81 +1,76 @@
-// src/app/api/chat/route.ts
 import { NextResponse } from "next/server";
+import OpenAI from 'openai';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-type Player = {
-  name: string;
-  team?: string;
-  position?: string;
-  points_std?: number;
-  points_half?: number;
-  points_ppr?: number;
-};
-
-const PLAYERS: Player[] = [
-  // WRs
-  { name: "Tyreek Hill", team: "MIA", position: "WR", points_half: 17.4, points_ppr: 20.8 },
-  { name: "Jaylen Waddle", team: "MIA", position: "WR", points_half: 12.9, points_ppr: 16.6 },
-  { name: "CeeDee Lamb", team: "DAL", position: "WR", points_half: 16.2, points_ppr: 20.2 },
-  { name: "Amon-Ra St. Brown", team: "DET", position: "WR", points_half: 15.8, points_ppr: 19.9 },
-  // RBs
+// Your existing player data - enhanced with injury status from your roster data
+const ENHANCED_PLAYERS = [
+  { name: "Tyreek Hill", team: "MIA", position: "WR", points_half: 17.4, points_ppr: 20.8, injury: "Q" },
   { name: "Christian McCaffrey", team: "SF", position: "RB", points_half: 19.3, points_ppr: 21.6 },
-  { name: "Derrick Henry", team: "BAL", position: "RB", points_half: 14.6, points_ppr: 16.0 },
-  { name: "Jahmyr Gibbs", team: "DET", position: "RB", points_half: 13.8, points_ppr: 17.5 },
-  // TEs
-  { name: "David Njoku", team: "CLE", position: "TE", points_half: 10.1, points_ppr: 12.4 },
-  { name: "George Kittle", team: "SF", position: "TE", points_half: 9.4, points_ppr: 11.6 },
+  { name: "Rashee Rice", team: "KC", position: "WR", points_half: 12.5, points_ppr: 15.8, injury: "SSPD" },
+  // ... your existing player data with injury status added
 ];
 
-function norm(s: string): string {
-  return s.trim().toLowerCase();
+interface StartSitSignals {
+  baseProjection: number;
+  injuryStatus?: string;
+  teamTotal?: number; // Vegas O/U (add later)
+  opponentRank?: number; // Defensive ranking (add later)
+  weatherPenalty?: number; // Weather impact (add later)
 }
 
-function nameTokens(p: Player): string[] {
-  return norm(p.name).split(/\s+/);
-}
+function calculatePDRScore(playerName: string, scoring: string, signals: StartSitSignals) {
+  let score = signals.baseProjection;
+  let confidence = 85; // Base confidence
+  let adjustments: string[] = [];
 
-function findPlayer(q: string): Player | null {
-  const n = norm(q);
-
-  // 1) Exact full-name
-  const exact = PLAYERS.find((p) => norm(p.name) === n);
-  if (exact) return exact;
-
-  // 2) Exact last-name if single token
-  if (!/\s/.test(n)) {
-    const lastExact = PLAYERS.find((p) => {
-      const tokens = nameTokens(p);
-      return tokens[tokens.length - 1] === n;
-    });
-    if (lastExact) return lastExact;
+  // PDR Algorithm (Section 10):
+  
+  // 1. Injury adjustments
+  if (signals.injuryStatus === 'Q') {
+    score *= 0.95; // -5% for questionable
+    confidence -= 10;
+    adjustments.push('-5% injury concern');
+  } else if (signals.injuryStatus === 'D') {
+    score *= 0.92; // -8% for doubtful  
+    confidence -= 20;
+    adjustments.push('-8% doubtful status');
+  } else if (signals.injuryStatus === 'SSPD') {
+    score *= 0.80; // -20% for suspended
+    confidence -= 30;
+    adjustments.push('-20% suspension risk');
   }
 
-  // 3) Contains anywhere in full name
-  const contains = PLAYERS.find((p) => norm(p.name).includes(n));
-  if (contains) return contains;
+  // 2. Team total adjustments (when available)
+  if (signals.teamTotal && signals.teamTotal > 45) {
+    score *= 1.03; // +3% for high team total
+    confidence += 5;
+    adjustments.push('+3% high-scoring game');
+  }
 
-  // 4) Token contains (handles prefixes)
-  const tokenHit = PLAYERS.find((p) => nameTokens(p).some((t) => t.startsWith(n)));
-  return tokenHit ?? null;
+  // 3. Weather penalty (when available)
+  if (signals.weatherPenalty && signals.weatherPenalty > 0) {
+    score *= (1 - signals.weatherPenalty);
+    confidence -= (signals.weatherPenalty * 10);
+    adjustments.push(`-${(signals.weatherPenalty * 100).toFixed(0)}% weather`);
+  }
+
+  // Ensure confidence stays in 0-100 range
+  confidence = Math.max(0, Math.min(100, confidence));
+
+  return {
+    score: Number(score.toFixed(1)),
+    confidence,
+    rationale: adjustments.length > 0 
+      ? `${playerName}: ${score.toFixed(1)} pts. ${adjustments.join(', ')}`
+      : `${playerName}: ${score.toFixed(1)} pts (clean projection)`,
+    riskLevel: confidence < 60 ? 'HIGH' : confidence < 80 ? 'MEDIUM' : 'LOW'
+  };
 }
-
-function project(p: Player, scoring: "half" | "ppr" | "std"): number {
-  if (scoring === "ppr") return p.points_ppr ?? p.points_half ?? p.points_std ?? 0;
-  if (scoring === "std") return p.points_std ?? p.points_half ?? p.points_ppr ?? 0;
-  return p.points_half ?? p.points_ppr ?? p.points_std ?? 0;
-}
-
-type ReqBody = {
-  player?: string;
-  players?: string[];
-  scoring?: "half" | "ppr" | "std";
-};
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as ReqBody;
+    const body = await req.json();
     const scoring = body.scoring ?? "half";
     const names = body.players?.length ? body.players : body.player ? [body.player] : [];
 
@@ -83,10 +78,47 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Missing player(s)" }, { status: 400 });
     }
 
-    const hits = names.map((n) => {
-      const p = findPlayer(n);
-      if (!p) return { name: n, found: false, points: 0 };
-      return { name: p.name, found: true, points: Number(project(p, scoring).toFixed(1)) };
+    // Helper function to find a player by name
+    function findPlayer(name: string) {
+      return ENHANCED_PLAYERS.find(
+        p => p.name.toLowerCase() === name.toLowerCase()
+      );
+    }
+
+    // Helper function to project points based on scoring type
+    function project(player: any, scoring: string): number {
+      if (scoring === "ppr" && typeof player.points_ppr === "number") {
+        return player.points_ppr;
+      }
+      if (scoring === "half" && typeof player.points_half === "number") {
+        return player.points_half;
+      }
+      // Default to half if unknown
+      return typeof player.points_half === "number" ? player.points_half : 0;
+    }
+
+    // Enhanced player lookup with your existing logic
+    const hits = names.map((name: string) => {
+      const player = findPlayer(name);
+      if (!player) return { name, found: false, points: 0, confidence: 0, rationale: `No data for "${name}"` };
+      
+      const baseProjection = project(player, scoring); // Your existing function
+      const signals: StartSitSignals = {
+        baseProjection,
+        injuryStatus: player.injury, // From your roster data
+        // teamTotal: await getVegasTotal(player.team), // Add later
+        // opponentRank: await getOpponentRank(player.team), // Add later
+      };
+
+      const result = calculatePDRScore(player.name, scoring, signals);
+      return {
+        name: player.name,
+        found: true,
+        points: result.score,
+        confidence: result.confidence,
+        rationale: result.rationale,
+        riskLevel: result.riskLevel
+      };
     });
 
     if (hits.length === 1) {
@@ -94,47 +126,42 @@ export async function POST(req: Request) {
       return NextResponse.json({
         ok: true,
         mode: "single",
-        input: names,
         projection: one,
-        message: one.found
-          ? `${one.name}: ${one.points} ${scoring.toUpperCase()} pts`
-          : `No data for "${one.name}".`,
+        message: one.rationale,
+        confidence: one.confidence,
+        lastUpdated: new Date().toISOString()
       });
     }
 
+    // Comparison logic with enhanced rationale
     const [a, b] = hits;
-    let winner: typeof a | typeof b | null = null;
-    if (a.found && b.found) winner = a.points >= b.points ? a : b;
+    let winner = null;
+    let decision = "Insufficient data";
+    let message = "No decision. Check player names.";
+
+    if (a.found && b.found) {
+      winner = a.points >= b.points ? a : b;
+      const loser = winner === a ? b : a;
+      decision = `Start ${winner.name}`;
+      message = `${winner.name} projected higher (${winner.points} vs ${loser.points}). Confidence: ${winner.confidence}%`;
+      
+      // Add risk assessment
+      if (winner.riskLevel === 'HIGH' && loser.riskLevel === 'LOW') {
+        message += ` ⚠️ Consider ${loser.name} as safer option.`;
+      }
+    }
 
     return NextResponse.json({
       ok: true,
       mode: "compare",
-      input: names,
       projections: [a, b],
-      decision: winner ? `Start ${winner.name}` : "Insufficient data",
-      message: winner
-        ? `${winner.name} projected higher (${winner.points} vs ${a === winner ? b.points : a.points})`
-        : "No decision. Check player names.",
+      decision,
+      message,
+      confidence: winner?.confidence || 0,
+      lastUpdated: new Date().toISOString()
     });
-  } catch {
+
+  } catch (error) {
     return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
-}
-
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q") ?? "";
-  const scoring = (searchParams.get("scoring") as ReqBody["scoring"]) ?? "half";
-  if (!q) return NextResponse.json({ ok: false, error: "Missing q" }, { status: 400 });
-
-  const parts = q.split(/\s*(?:vs|,|\||\bor\b)\s*/i).filter(Boolean);
-  const body: ReqBody = parts.length > 1 ? { players: parts, scoring } : { player: parts[0], scoring };
-
-  return POST(
-    new Request(req.url, {
-      method: "POST",
-      body: JSON.stringify(body),
-      headers: { "content-type": "application/json" },
-    }),
-  );
 }
