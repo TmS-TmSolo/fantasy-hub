@@ -3,6 +3,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import VideoPlayer from './VideoPlayer';
 
+let qy = supabase
+  .from('videos') // <- lowercase
+  .select('id,title,public_url,storage_path,created_at')
+  .order('created_at', { ascending: false });
+
+
 type VideoRow = { id: string; title: string; public_url: string; storage_path: string; created_at: string };
 
 type Props = {
