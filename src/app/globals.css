@@ -1,10 +1,8 @@
 @import "tailwindcss";
 
 
-@import "tailwindcss";
-
 :root{
-  --bg:#0b1220;
+  --bg:#0c3380;
   --surface:#111a2b;
   --card:#0e1627;
   --text:#e6eefb;
@@ -88,8 +86,8 @@ html,body{ background:var(--bg); color:var(--text); }
 #assistant textarea,
 #assistant input,
 #assistant .bg-indigo-800,
-#assistant .bg-indigo-600 { color:#000; }
+#assistant .bg-indigo-600 { color:#cecaca; }
 
 /* Black placeholders */
 #assistant textarea::placeholder,
-#assistant input::placeholder { color: rgba(0,0,0,.6); }
+#assistant input::placeholder { color: rgba(202, 197, 197, 0.6); }
