@@ -1,45 +1,50 @@
 // src/app/owners/page.tsx
-import { db } from '@/lib/db';
-import { leagues, owners, teams } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-import OwnerCard from '@/components/OwnerCard';
+export const dynamic = "force-dynamic";
+
+import { createClient } from "@supabase/supabase-js";
+
+type Owner = {
+  id: string;
+  display_name: string;
+  photo_url?: string | null;
+  bio?: string | null;
+};
 
 export default async function OwnersPage() {
-  // Fetch all leagues (or you might want to fetch a specific league)
-  const leaguesList = await db.select().from(leagues).limit(1);
-  const league = leaguesList[0];
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createClient(url, anon);
 
-  if (!league) {
-    return <div>No league found</div>;
-  }
+  const { data, error } = await supabase
+    .from("owners")
+    .select("id, display_name, photo_url, bio")
+    .order("display_name", { ascending: true });
 
-  // Fetch owners for this league
-  const ownersList = await db
-    .select()
-    .from(owners)
-    .where(eq(owners.leagueId, league.id));
-
-  // Fetch teams for this league
-  const teamsList = await db
-    .select()
-    .from(teams)
-    .where(eq(teams.leagueId, league.id));
+  const owners: Owner[] =
+    !error && Array.isArray(data) ? data : Array.from({ length: 12 }, (_, i) => ({
+      id: String(i + 1),
+      display_name: `Owner ${i + 1}`,
+      photo_url: null,
+      bio: "Add bio in Admin.",
+    }));
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">{league.name} - Owners</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {ownersList.map(owner => {
-          const team = teamsList.find(t => t.ownerId === owner.id);
-          return (
-            <OwnerCard 
-              key={owner.id} 
-              owner={owner} 
-              team={team}
+    <main className="max-w-5xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">League Owners</h1>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {owners.map((o) => (
+          <div key={o.id} className="border rounded p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={o.photo_url || "/owners/placeholder.webp"}
+              alt={o.display_name}
+              className="w-full h-48 object-cover rounded mb-3"
             />
-          );
-        })}
+            <div className="font-semibold">{o.display_name}</div>
+            <p className="text-sm text-gray-700">{o.bio || "—"}</p>
+          </div>
+        ))}
       </div>
-    </div>
+    </main>
   );
 }
