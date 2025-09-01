@@ -91,3 +91,26 @@ html,body{ background:var(--bg); color:var(--text); }
 /* Black placeholders */
 #assistant textarea::placeholder,
 #assistant input::placeholder { color: rgba(202, 197, 197, 0.6); }
+
+/* progress styling */
+.progress {
+  -webkit-appearance: none;
+   appearance: none;
+  background: #e5e7eb; /* gray-200 */
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.progress::-webkit-progress-bar {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+.progress::-webkit-progress-value {
+  background: #2563eb; /* blue-600 */
+  border-radius: 9999px;
+  transition: width 300ms;
+}
+.progress::-moz-progress-bar {
+  background: #2563eb;
+  border-radius: 9999px;
+  transition: width 300ms;
+}

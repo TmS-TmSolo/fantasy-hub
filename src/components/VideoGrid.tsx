@@ -1,112 +1,86 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import VideoPlayer from './VideoPlayer';
 
-type Video = {
-  id: string | number;
-  title: string;
-  url: string;
-  featured?: boolean;
-  featured_rank?: number | null;
-  created_at?: string | null;
-};
+type VideoRow = { id: string; title: string; public_url: string; storage_path: string; created_at: string };
 
 type Props = {
-  /** Homepage: show only these if available */
   featuredOnly?: boolean;
-  /** Limit count, e.g., 3 for homepage */
   limit?: number;
-  /** Filter out URLs that were deleted from storage */
-  filterStale?: boolean;
+  className?: string;
 };
 
-async function headExists(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, { method: 'HEAD' });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-export default function VideoGrid({ featuredOnly = false, limit, filterStale = true }: Props) {
-  const [list, setList] = useState<Video[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function VideoGrid({ featuredOnly = false, limit, className }: Props) {
+  const [videos, setVideos] = useState<VideoRow[]>([]);
+  const [selected, setSelected] = useState<VideoRow | null>(null);
+  const [q, setQ] = useState('');
 
   useEffect(() => {
-    let alive = true;
-
-    async function load() {
-      setLoading(true);
-
-      // base select
-      let q = supabase
+    (async () => {
+      // try to filter by a 'featured' column if it exists; fallback if not
+      let res = await supabase
         .from('videos')
-        .select('id,title,url,featured,featured_rank,created_at');
+        .select('id,title,public_url,storage_path,created_at')
+        .order('created_at', { ascending: false });
 
-      if (featuredOnly) q = q.eq('featured', true);
-
-      // order: featured_rank desc first, then newest created
-      // featured_rank defaults to 0 if you don’t set it
-      q = q.order('featured_rank', { ascending: false }).order('created_at', { ascending: false });
-
-      if (limit) q = q.limit(limit);
-
-      const { data, error } = await q;
-
-      if (error) {
-        if (alive) {
-          setList([]);
-          setLoading(false);
-        }
-        return;
-      }
-
-      let rows = (data ?? []) as Video[];
-
-      // If you asked for featuredOnly but none are flagged, fall back to newest
-      if (featuredOnly && rows.length === 0) {
-        const { data: newest } = await supabase
+      if (featuredOnly) {
+        const filtered = await supabase
           .from('videos')
-          .select('id,title,url,featured,featured_rank,created_at')
-          .order('created_at', { ascending: false })
-          .limit(limit ?? 3);
-        rows = (newest ?? []) as Video[];
+          .select('id,title,public_url,storage_path,created_at')
+          .eq('featured', true)
+          .order('created_at', { ascending: false });
+
+        // if the column exists, use it; else fall back to unfiltered
+        if (!filtered.error) res = filtered;
       }
 
-      if (filterStale) {
-        const withOk = await Promise.all(
-          rows.map(async (v) => ({ v, ok: await headExists(v.url) }))
-        );
-        rows = withOk.filter((x) => x.ok).map((x) => x.v);
-      }
+      const rows = (res.data || []) as VideoRow[];
+      setVideos(limit ? rows.slice(0, limit) : rows);
+    })();
+  }, [featuredOnly, limit]);
 
-      if (alive) {
-        setList(rows);
-        setLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      alive = false;
-    };
-  }, [featuredOnly, limit, filterStale]);
-
-  if (loading) return <div className="text-sm text-muted">Loading…</div>;
-  if (list.length === 0) return <div className="text-sm text-muted">No videos yet.</div>;
+  const filtered = q
+    ? videos.filter(v =>
+        v.title.toLowerCase().includes(q.toLowerCase()) ||
+        v.storage_path.toLowerCase().includes(q.toLowerCase())
+      )
+    : videos;
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {list.map((v) => (
-        <div key={String(v.id)} className="card overflow-hidden">
-          <div className="p-3">
-            <h3 className="font-semibold">{v.title}</h3>
+    <div className={className ?? 'space-y-4'}>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search videos"
+        className="border rounded p-2 w-full max-w-md"
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filtered.map(v => (
+          <button key={v.id} className="text-left border rounded overflow-hidden hover:shadow" onClick={() => setSelected(v)}>
+            <div className="aspect-video bg-black grid place-items-center text-white text-sm">Play</div>
+            <div className="p-3">
+              <div className="font-semibold line-clamp-2">{v.title}</div>
+              <div className="text-xs text-gray-600 mt-1">{new Date(v.created_at).toLocaleString()}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <div className="fixed inset-0 bg-black/70 z-50 grid place-items-center p-4" onClick={() => setSelected(null)}>
+          <div className="bg-white w-full max-w-3xl rounded shadow" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-4 py-3 border-b">
+              <div className="font-semibold truncate pr-4">{selected.title}</div>
+              <button className="px-3 py-1 text-sm border rounded" onClick={() => setSelected(null)}>Close</button>
+            </div>
+            <div className="p-4">
+              <VideoPlayer src={selected.public_url} title={selected.title} />
+            </div>
           </div>
-          <video src={v.url} controls className="w-full aspect-video" />
         </div>
-      ))}
+      )}
     </div>
   );
 }

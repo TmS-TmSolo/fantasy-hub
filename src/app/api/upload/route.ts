@@ -1,115 +1,91 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-// Simple PIN validation - you can enhance this
-const UPLOAD_PIN = process.env.UPLOAD_PIN || "fantasy2025";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SERVICE_ROLE =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const BUCKET = process.env.SUPABASE_VIDEO_BUCKET || 'videos';
+
+function bearer(req: NextRequest) {
+  const h = req.headers.get('authorization') || '';
+  const lower = h.toLowerCase();
+  if (lower.startsWith('bearer ')) return h.slice(7);
+  return '';
+}
 
 export async function POST(req: NextRequest) {
   try {
-    // Check authorization
-    const authHeader = req.headers.get("authorization");
-    const pin = authHeader?.replace("Bearer ", "");
-    
-    if (pin !== UPLOAD_PIN) {
-      return NextResponse.json({ error: "Invalid PIN" }, { status: 401 });
+    const token = bearer(req);
+    const okPins = [process.env.UPLOAD_TOKEN, process.env.ADMIN_AI_PIN].filter(Boolean);
+    if (!okPins.length) {
+      return NextResponse.json({ error: 'Server PINs not configured.' }, { status: 500 });
+    }
+    if (!okPins.includes(token)) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
     const form = await req.formData();
-    const file = form.get("file");
-    const title = form.get("title");
-    const teamId = form.get("teamId");
-    
-    if (!(file instanceof File)) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
-    }
-    
-    if (!title || !teamId) {
-      return NextResponse.json({ error: "Title and Team ID required" }, { status: 400 });
+    const file = form.get('file') as File | null;
+    const title = String(form.get('title') || '').trim();
+
+    if (!file) return NextResponse.json({ error: 'File missing.' }, { status: 400 });
+    if (!title) return NextResponse.json({ error: 'Title missing.' }, { status: 400 });
+
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      return NextResponse.json({ error: 'Supabase env not set.' }, { status: 500 });
     }
 
-    // Validate file type
-    const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
-    if (!validTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Invalid file type. Please upload MP4, WebM, MOV, or AVI" }, { status: 400 });
-    }
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Validate file size (500MB limit)
-    const maxSize = 500 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: "File too large. Maximum size is 500MB" }, { status: 400 });
-    }
+    // Ensure bucket exists (idempotent)
+    await supabase.storage.createBucket(BUCKET, {
+      public: true,
+      fileSizeLimit: 524288000, // 500MB
+    }).catch(() => { /* bucket may already exist */ });
 
-    // Verify team exists
-    const { data: team, error: teamError } = await supabase
-      .from("teams")
-      .select("id, name")
-      .eq("id", teamId)
-      .single();
+    const ext = (() => {
+      const name = (file as any).name as string | undefined;
+      if (!name) return '';
+      const dot = name.lastIndexOf('.');
+      return dot >= 0 ? name.slice(dot) : '';
+    })();
 
-    if (teamError || !team) {
-      return NextResponse.json({ error: "Invalid Team ID" }, { status: 400 });
-    }
+    const key = `uploads/${new Date().getFullYear()}/${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2)}${ext}`;
 
-    // Create unique filename
-    const fileExt = file.name.split(".").pop();
-    const timestamp = Date.now();
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const fileName = `team-${teamId}-${timestamp}-${randomStr}.${fileExt}`;
-    const path = `videos/${fileName}`;
-
-    // Upload to storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("Videos")
-      .upload(path, file, { 
-        upsert: false, 
-        contentType: file.type,
-        cacheControl: "3600"
-      });
-
-    if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from("Videos")
-      .getPublicUrl(path);
-
-    // Save to database with team association
-    const { data: videoData, error: dbError } = await supabase
-      .from("videos")
-      .insert({
-        title: title.toString(),
-        url: publicUrl,
-        team_id: teamId.toString(),
-        featured: false,
-        featured_rank: 0,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (dbError) {
-      // If database insert fails, delete the uploaded file
-      await supabase.storage.from("Videos").remove([path]);
-      return NextResponse.json({ error: "Failed to save video metadata" }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      success: true,
-      video: videoData,
-      message: `Video uploaded successfully for ${team.name}!`
+    const upload = await supabase.storage.from(BUCKET).upload(key, file, {
+      cacheControl: '31536000',
+      contentType: (file as any).type || 'video/mp4',
+      upsert: false,
     });
 
-  } catch (error) {
-    console.error("Upload error:", error);
-    return NextResponse.json({ 
-      error: "An unexpected error occurred" 
-    }, { status: 500 });
+    if (upload.error) {
+      return NextResponse.json({ error: upload.error.message }, { status: 500 });
+    }
+
+    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(key);
+    const public_url = pub?.publicUrl;
+
+    const insert = await supabase.from('videos').insert({
+      title,
+      storage_path: key,
+      public_url,
+    });
+
+    if (insert.error) {
+      return NextResponse.json({ error: insert.error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      { message: 'Uploaded', url: public_url, path: key },
+      { status: 200 }
+    );
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || 'Server error.' }, { status: 500 });
   }
 }

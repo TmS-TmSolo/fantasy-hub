@@ -1,8 +1,13 @@
-export default function VideoPlayer({ src, title }: { src: string; title?: string }) {
+'use client';
+
+export default function VideoPlayer({ src, title }: { src: string; title: string }) {
+  if (!src) return <div className="text-sm text-gray-600">Video not found.</div>;
   return (
-    <div className="aspect-video w-full rounded-2xl overflow-hidden border">
-      <video src={src} controls className="w-full h-full" preload="metadata" />
-      {title ? <div className="mt-2 text-sm">{title}</div> : null}
+    <div className="w-full">
+      <div className="aspect-video bg-black">
+        <video src={src} controls className="w-full h-full" />
+      </div>
+      <div className="mt-2 font-semibold">{title}</div>
     </div>
   );
 }
