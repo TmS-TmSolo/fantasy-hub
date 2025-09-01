@@ -1,5 +1,5 @@
 // src/app/page.tsx
-import NavBar from "@/components/NavBar";
+// import NavBar from "@/components/NavBar";
 import Hero from "@/components/Hero";
 import Ticker from "@/components/Ticker";
 import Section from "@/components/Section";
@@ -39,7 +39,7 @@ export default function HomePage() {
       </Section>
 
       <Section id="highlights" title="Highlights">
-        <VideoGrid />
+        <VideoGrid featuredOnly limit={3}/>
       </Section>
 
       <Section id="assistant" title="Start/Sit Assistant">

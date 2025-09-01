@@ -25,7 +25,6 @@ const HISTORY: Champ[] = [
 export default function Cup() {
   const [vids, setVids] = useState<string[]>([]);
   const [pics, setPics] = useState<string[]>([]);
-  const [pass, setPass] = useState('');
 
   async function listMedia() {
     const v = await supabase.storage.from('Videos').list('trophy/videos', { limit: 100 });
@@ -59,7 +58,6 @@ export default function Cup() {
 
     const res = await fetch(`/api/upload?${qs.toString()}`, {
       method: 'POST',
-      headers: { 'x-upload-token': pass },
       body: form,
     });
     if (!res.ok) { alert('Upload failed'); return; }
@@ -101,13 +99,6 @@ export default function Cup() {
       <section className="space-y-3 card card-glow p-5">
         <h2 className="text-xl font-display">Add Media</h2>
         <div className="grid gap-3 sm:grid-cols-3">
-          <input
-            type="password"
-            placeholder="Upload password"
-            className="rounded-xl border border-white/20 bg-transparent px-3 py-2 text-sm"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-          />
           <label className="flex items-center gap-2">
             <span className="text-sm w-24">Video:</span>
             <input type="file" accept="video/*" onChange={(e) => e.target.files?.[0] && upload('video', e.target.files[0])} />
@@ -117,7 +108,7 @@ export default function Cup() {
             <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && upload('photo', e.target.files[0])} />
           </label>
         </div>
-        <p className="text-xs text-muted">Uses your existing /api/upload with UPLOAD_TOKEN. Stored in bucket “Videos” under trophy/.</p>
+        <p className="text-xs text-muted">Stored in bucket “Videos” under trophy/.</p>
       </section>
 
       <section className="space-y-3" id="videos">
