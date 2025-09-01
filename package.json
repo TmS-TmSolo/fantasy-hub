@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:data": "tsx src/scripts/migrate-data.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:push": "drizzle-kit push --config drizzle.config.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.56.1",
@@ -29,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }
