@@ -1,7 +1,6 @@
 // src/app/page.tsx
 export const dynamic = 'force-dynamic';
 
-import { createClient } from '@supabase/supabase-js';
 import Hero from "@/components/Hero";
 import Ticker from "@/components/Ticker";
 import Section from "@/components/Section";
@@ -10,26 +9,13 @@ import Cup from "@/components/Cup";
 import Footer from "@/components/Footer";
 import VideoPlayer from "@/components/VideoPlayer";
 
+const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
+
 function CupPage() {
   return <Cup />;
 }
 
-type VideoRow = { id: string; title: string; public_url: string; created_at: string };
-
 export default async function HomePage() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const { data } = await supabase
-    .from('videos')
-    .select('id,title,public_url,created_at')
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  const latest: VideoRow | null = data?.[0] ?? null;
-
   return (
     <>
       <Hero />
@@ -43,22 +29,23 @@ export default async function HomePage() {
         ]}
       />
 
-      {latest && (
-        <Section title="Latest Upload">
+      <Section title="League Video">
+        {VIDEO_URL ? (
           <VideoPlayer
-            src={latest.public_url}
-            title={latest.title}
+            src={VIDEO_URL}
+            title="League Video"
             autoPlay
             muted
             loop
-            controls={false}
+            controls
             className="w-full"
           />
-          <div className="text-sm text-gray-600 mt-2">
-            {new Date(latest.created_at).toLocaleString()}
+        ) : (
+          <div className="text-sm text-gray-600">
+            Set <code>NEXT_PUBLIC_VIDEO_URL</code> to display a video.
           </div>
-        </Section>
-      )}
+        )}
+      </Section>
 
       <Section title="This Week">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -68,6 +55,7 @@ export default async function HomePage() {
           <StatCard title="Mangina Leader" stat="-0" hint="All of Us" />
         </div>
       </Section>
+
       <Footer />
     </>
   );
