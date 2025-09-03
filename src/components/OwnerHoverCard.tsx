@@ -1,25 +1,28 @@
 // src/components/OwnerHoverCard.tsx
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { getOwnerProfile } from "@/data/owners";
 
-type Props = { ownerId: string; x: number; y: number };
+export type OwnerHoverCardProps = { ownerId: string };
 
-export default function OwnerHoverCard({ ownerId, x, y }: Props) {
+const OwnerHoverCard: React.FC<OwnerHoverCardProps> = ({ ownerId }) => {
   const p = getOwnerProfile(ownerId);
   if (!p) return null;
 
   return (
     <div
-      className="owner-hover-card z-[120] w-72 rounded-2xl border bg-white p-4 shadow-xl"
-      style={{ ["--x" as any]: `${x + 12}px`, ["--y" as any]: `${y + 12}px` }}
+      className="w-72 rounded-2xl border bg-white p-4 shadow-xl"
       role="dialog"
       aria-label={`${p.displayName} profile`}
     >
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={p.photoUrl} alt={p.displayName} className="h-12 w-12 rounded-full object-cover" />
+        <img
+          src={p.photoUrl}
+          alt={p.displayName}
+          className="h-12 w-12 rounded-full object-cover"
+        />
         <div>
           <div className="text-sm font-semibold">{p.displayName}</div>
           <div className="text-xs text-gray-600">{p.teamName}</div>
@@ -40,4 +43,6 @@ export default function OwnerHoverCard({ ownerId, x, y }: Props) {
       </div>
     </div>
   );
-}
+};
+
+export default memo(OwnerHoverCard);
