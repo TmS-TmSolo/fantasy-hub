@@ -1,14 +1,13 @@
+// src/app/assistant/page.tsx
+import Section from "@/components/Section";
 import FantasyAssistant from "@/components/FantasyAssistant";
 
-export const metadata = {
-  title: "Fantasy Assistant",
-};
+export const dynamic = "force-dynamic";
 
 export default function AssistantPage() {
   return (
-    <main className="p-6">
-      <h1 className="text-2xl mb-4">Fantasy Assistant</h1>
+    <Section title="Start / Sit Assistant">
       <FantasyAssistant />
-    </main>
+    </Section>
   );
 }

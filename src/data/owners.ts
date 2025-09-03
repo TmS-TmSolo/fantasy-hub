@@ -65,18 +65,18 @@ function bioFor(id: string): string {
 
 function champsFor(id: string): number {
   switch (id) {
-    case "cole_bixenman": return 3;
+    case "cole_bixenman": return 0;
     case "rob_thomas": return 2;
-    case "brady_kincannon": return 2;
-    case "matt_young": return 1;
+    case "brady_kincannon": return 0;
+    case "matt_young": return 0;
     case "brennen_hall": return 1;
     case "michael_vlahovich": return 1;
-    case "matthew_hart": return 1;
+    case "matthew_hart": return 4;
     case "thomas_young": return 0;
     case "davis_johnson": return 0;
     case "brad_carter": return 0;
-    case "troy_scott": return 0;
-    case "andy_fox": return 0;
+    case "troy_scott": return 2;
+    case "andy_fox": return 1;
     default: return 0;
   }
 }
@@ -89,9 +89,9 @@ function favFor(id: string): string {
     case "cole_bixenman": return "Christian McCaffrey";
     case "matthew_hart": return "Ja'Marr Chase";
     case "rob_thomas": return "Travis Kelce";
-    case "thomas_young": return "DK Metcalf";
+    case "thomas_young": return "Derrick Henry";
     case "davis_johnson": return "Justin Herbert";
-    case "brad_carter": return "CeeDee Lamb";
+    case "brad_carter": return "Josh Allen";
     case "troy_scott": return "Tyreek Hill";
     case "brady_kincannon": return "Josh Allen";
     case "andy_fox": return "Saquon Barkley";
@@ -108,9 +108,9 @@ function mascotFor(id: string): string {
     case "cole_bixenman": return "49ers Sourdough Sam";
     case "matthew_hart": return "Bengals Who Dey";
     case "rob_thomas": return "Chiefs KC Wolf";
-    case "thomas_young": return "Seahawks Blitz";
+    case "thomas_young": return "Sir Purr";
     case "davis_johnson": return "Vikings Skol";
-    case "brad_carter": return "Cowboys Rowdy";
+    case "brad_carter": return "Bills Billy Buffalo";
     case "troy_scott": return "Dolphins T.D.";
     case "brady_kincannon": return "Bills Billy Buffalo";
     case "andy_fox": return "Giants Victor";

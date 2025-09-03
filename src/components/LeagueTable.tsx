@@ -1,7 +1,7 @@
 // src/components/LeagueTable.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import OwnerHoverCard from "@/components/OwnerHoverCard";
 import { league } from "@/data/league";
 
@@ -65,6 +65,8 @@ function resolveOwnerIdFromManagers(managers?: string): string | null {
 }
 
 export default function LeagueTable(){
+  const [openOwnerId, setOpenOwnerId] = useState<string | null>(null);
+
   return (
     <div className="space-y-8">
       {/* Header row */}
@@ -142,12 +144,13 @@ export default function LeagueTable(){
                     <Td className="font-medium">{r.team}</Td>
                     <Td className="text-muted">
                       {ownerId ? (
-                        <span className="group relative inline-block">
-                          <span className="underline underline-offset-2">{r.managers}</span>
-                          <div className="pointer-events-none absolute left-0 top-full z-[120] hidden translate-y-2 group-hover:block">
-                            <OwnerHoverCard ownerId={ownerId} />
-                          </div>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setOpenOwnerId(ownerId)}
+                          className="underline underline-offset-2 hover:text-gray-900"
+                        >
+                          {r.managers}
+                        </button>
                       ) : (
                         r.managers || "--"
                       )}
@@ -172,6 +175,13 @@ export default function LeagueTable(){
         <div className="font-semibold mb-1">Standings Glossary</div>
         <p>x: Clinched Playoffs · y: Clinched Division · z: Clinched Bye · *: Clinched No.1 Seed · e: Eliminated</p>
       </div>
+
+      {/* Modal portal */}
+      <OwnerHoverCard
+        ownerId={openOwnerId ?? ""}
+        open={!!openOwnerId}
+        onClose={() => setOpenOwnerId(null)}
+      />
     </div>
   );
 }
