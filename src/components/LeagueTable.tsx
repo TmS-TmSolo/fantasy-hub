@@ -1,4 +1,11 @@
-// ESPN-style standings + season stats (0.5 PPR league theme)
+// src/components/LeagueTable.tsx
+"use client";
+
+import { useMemo, useState } from "react";
+import { league } from "@/data/league";
+import { getOwnerProfile } from "@/data/owners";
+
+
 type Standing = {
   rk: number;
   team: string;
@@ -43,8 +50,6 @@ const stats: Stat[] = [
   { team:'Pirates of the Minge', managers:'andy fox, Brockton Gates', pf:0,pa:0,div:'0-0-0',home:'0-0-0',away:'0-0-0',strk:'None',moves:0 },
 ];
 
-
-
 function Th({ children, className='' }: any){
   return <th className={`px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wide ${className}`}>{children}</th>;
 }
@@ -52,7 +57,55 @@ function Td({ children, className='' }: any){
   return <td className={`px-3 py-2 text-sm ${className}`}>{children}</td>;
 }
 
-export default function StandingsTable(){
+function OwnerHoverCard({ ownerId, x, y }: { ownerId: string; x: number; y: number }) {
+  const p = getOwnerProfile(ownerId);
+  if (!p) return null;
+  return (
+    <div
+      className="fixed z-[120] w-72 rounded-2xl border bg-white p-4 shadow-xl"
+      style={{ top: y + 12, left: x + 12 }}
+      role="dialog"
+      aria-label={`${p.displayName} profile`}
+    >
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.photoUrl} alt={p.displayName} className="h-12 w-12 rounded-full object-cover" />
+        <div>
+          <div className="text-sm font-semibold">{p.displayName}</div>
+          <div className="text-xs text-gray-600">{p.teamName}</div>
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-gray-800">{p.bio}</p>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-lg border p-2">
+          <div className="text-gray-500">Championships</div>
+          <div className="text-base font-semibold">{p.championships}</div>
+        </div>
+        <div className="rounded-lg border p-2">
+          <div className="text-gray-500">Favorite NFL Mascot</div>
+          <div className="text-base font-semibold">{p.favoriteMascot}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function resolveOwnerIdFromManagers(managers?: string): string | null {
+  if (!managers) return null;
+  const first = managers.split(",")[0]?.trim().toLowerCase();
+  if (!first) return null;
+  const owner = league.owners.find(o => o.displayName.trim().toLowerCase() === first);
+  return owner?.id ?? null;
+}
+
+export default function LeagueTable(){
+  const [hover, setHover] = useState<{ ownerId: string; x: number; y: number } | null>(null);
+
+  useMemo(() => {
+    // placeholder to mirror your existing component structure
+    return null;
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Header row */}
@@ -105,7 +158,7 @@ export default function StandingsTable(){
       </div>
 
       {/* Season stats table */}
-      <div className="card card-glow overflow-hidden">
+      <div className="card card-glow overflow-hidden relative">
         <div className="border-b border-white/10 px-4 py-3 text-sm font-semibold">Season Stats</div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px]">
@@ -123,22 +176,41 @@ export default function StandingsTable(){
               </tr>
             </thead>
             <tbody>
-              {stats.map((r, i) => (
-                <tr key={r.team} className={i % 2 ? 'bg-white/5' : ''}>
-                  <Td className="font-medium">{r.team}</Td>
-                  <Td className="text-muted">{r.managers || '--'}</Td>
-                  <Td className="text-right">{r.pf.toFixed(1)}</Td>
-                  <Td className="text-right">{r.pa.toFixed(1)}</Td>
-                  <Td className="text-right">{r.div}</Td>
-                  <Td className="text-right">{r.home}</Td>
-                  <Td className="text-right">{r.away}</Td>
-                  <Td className="text-right">{r.strk}</Td>
-                  <Td className="text-right">{r.moves}</Td>
-                </tr>
-              ))}
+              {stats.map((r, i) => {
+                const ownerId = resolveOwnerIdFromManagers(r.managers);
+                return (
+                  <tr key={r.team} className={i % 2 ? 'bg-white/5' : ''}>
+                    <Td className="font-medium">{r.team}</Td>
+                    <Td
+  className="text-muted"
+  onMouseEnter={(e: React.MouseEvent<HTMLTableCellElement>) => {
+    if (!ownerId) return;
+    setHover({ ownerId, x: e.clientX, y: e.clientY });
+  }}
+  onMouseMove={(e: React.MouseEvent<HTMLTableCellElement>) => {
+    if (!ownerId) return;
+    setHover({ ownerId, x: e.clientX, y: e.clientY });
+  }}
+  onMouseLeave={() => setHover(null)}
+>
+  {r.managers || '--'}
+</Td>
+
+                    <Td className="text-right">{r.pf.toFixed(1)}</Td>
+                    <Td className="text-right">{r.pa.toFixed(1)}</Td>
+                    <Td className="text-right">{r.div}</Td>
+                    <Td className="text-right">{r.home}</Td>
+                    <Td className="text-right">{r.away}</Td>
+                    <Td className="text-right">{r.strk}</Td>
+                    <Td className="text-right">{r.moves}</Td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+
+        {hover && <OwnerHoverCard ownerId={hover.ownerId} x={hover.x} y={hover.y} />}
       </div>
 
       {/* Glossary */}

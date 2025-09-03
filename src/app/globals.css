@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+.owner-hover-card {
+  position: fixed;
+  transform: translate(var(--x, 0), var(--y, 0));
+}
 
 :root{
   --bg:#0c3380;
@@ -113,4 +117,10 @@ html,body{ background:var(--bg); color:var(--text); }
   background: #2563eb;
   border-radius: 9999px;
   transition: width 300ms;
+}
+
+/* globals.css */
+.owner-hover-card {
+  position: fixed;
+  transform: translate(var(--x, 0), var(--y, 0));
 }
