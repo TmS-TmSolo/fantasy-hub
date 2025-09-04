@@ -1,7 +1,7 @@
 // src/components/NewsSection.tsx
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 type NewsItem = {
   id: string;
@@ -41,10 +41,24 @@ const newsItems: NewsItem[] = [
   }
 ];
 
-const NewsVideoCard = ({ item }: { item: NewsItem }) => {
+const NewsVideoCard = ({ item, activeVideoId, setActiveVideoId }: { 
+  item: NewsItem; 
+  activeVideoId: string | null;
+  setActiveVideoId: (id: string | null) => void;
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Stop this video if another video starts playing
+  useEffect(() => {
+    if (activeVideoId !== item.id && isPlaying) {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      setIsPlaying(false);
+    }
+  }, [activeVideoId, item.id, isPlaying]);
 
   const togglePlayPause = () => {
     if (!videoRef.current) return;
@@ -52,7 +66,10 @@ const NewsVideoCard = ({ item }: { item: NewsItem }) => {
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
+      setActiveVideoId(null);
     } else {
+      // Stop any other playing video
+      setActiveVideoId(item.id);
       videoRef.current.play().then(() => {
         setIsPlaying(true);
       }).catch(console.error);
@@ -85,6 +102,10 @@ const NewsVideoCard = ({ item }: { item: NewsItem }) => {
           muted
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false);
+            setActiveVideoId(null);
+          }}
         >
           <source src={item.videoUrl} type="video/mp4" />
           {/* Fallback thumbnail */}
@@ -139,6 +160,8 @@ const NewsVideoCard = ({ item }: { item: NewsItem }) => {
 };
 
 export default function NewsSection() {
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -153,7 +176,12 @@ export default function NewsSection() {
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {newsItems.map((item) => (
-          <NewsVideoCard key={item.id} item={item} />
+          <NewsVideoCard 
+            key={item.id} 
+            item={item} 
+            activeVideoId={activeVideoId}
+            setActiveVideoId={setActiveVideoId}
+          />
         ))}
       </div>
     </div>
