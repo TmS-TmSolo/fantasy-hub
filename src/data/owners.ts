@@ -83,7 +83,7 @@ function champsFor(id: string): number {
 
 function favFor(id: string): string {
   switch (id) {
-    case "matt_young": return "Shawn Alexander";
+    case "matt_young": return "CMC/Shawn Alexander";
     case "brennen_hall": return "Bijan Robinson";
     case "michael_vlahovich": return "Antonio Brown";
     case "cole_bixenman": return "Joe Burrow";
@@ -102,7 +102,7 @@ function favFor(id: string): string {
 function mascotFor(id: string): string {
   // fun, simple picks; edit anytime
   switch (id) {
-    case "matt_young": return "Vikings Skol Viking";
+    case "matt_young": return "Sourdough Sam";
     case "brennen_hall": return "Pat the Patriot";
     case "michael_vlahovich": return "Dolphins T.D. the Flipper";
     case "cole_bixenman": return "Blitz";
