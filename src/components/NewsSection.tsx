@@ -22,22 +22,6 @@ const newsItems: NewsItem[] = [
     videoUrl: '/videos/week1-highlights.mp4',
     date: 'Sep 4, 2025',
     author: 'League Office'
-  },
-  {
-    id: '2', 
-    title: 'Trade Analysis',
-    description: 'Breaking down the biggest trades and their impact on league standings.',
-    videoUrl: '/videos/trade-analysis.mp4',
-    date: 'Sep 3, 2025',
-    author: 'Fantasy Expert'
-  },
-  {
-    id: '3',
-    title: 'Injury Report',
-    description: 'Latest injury updates and how they affect your fantasy lineup decisions.',
-    videoUrl: '/videos/injury-report.mp4', 
-    date: 'Sep 2, 2025',
-    author: 'Medical Team'
   }
 ];
 
