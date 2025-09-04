@@ -1,126 +1,117 @@
 @import "tailwindcss";
 
-.owner-hover-card {
-  position: fixed;
-  transform: translate(var(--x, 0), var(--y, 0));
-}
-
+/* ================== Theme Vars ================== */
 :root{
   --bg:#0c3380;
   --surface:#111a2b;
   --card:#0e1627;
+  --card-2:#0b1323;          /* added for gradient fallback */
   --text:#e6eefb;
   --muted:#9db2d7;
   --accent:#4cc9f0;
 }
 
+/* ================== Base ================== */
 html,body{ background:var(--bg); color:var(--text); }
-
-.card{
-  border-radius: 1rem; /* rounded-2xl */
-  border: 1px solid rgba(255,255,255,0.1); /* border-white/10 */
-  background: var(--card);
-}
-.card-glow{ box-shadow:0 0 0 1px #ffffff1a inset, 0 10px 30px #00000080; }
-.text-muted{ color:var(--muted); }
-.accent-2{ color:var(--accent); }
-
-
-/* utilities used in your components */
-.card {
-  border-radius: var(--radius-card);
-  background: var(--color-card);
-  border: 1px solid rgba(255,255,255,0.1);
-}
-.card-glow { box-shadow: 0 0 0 1px #ffffff1a inset, 0 10px 30px #00000080; }
-.text-muted { color: var(--color-muted); }
-.accent-2 { color: var(--color-accent); }
-
-
 .font-sans{ font-family: var(--font-sans), ui-sans-serif, system-ui; }
 .font-display{ font-family: var(--font-display), ui-sans-serif, system-ui; }
 
-/* Backgrounds */
+/* ================== Text Utilities ================== */
+.text-muted{ color:var(--muted); }
+.text-accent{ color:var(--accent); }
+.accent-2{ color:var(--accent); }
+
+/* ================== Cards ================== */
+.card{
+  border-radius: 1rem;                      /* rounded-2xl */
+  border: 1px solid rgba(255,255,255,0.1);  /* border-white/10 */
+  background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+}
+.card-glow{
+  box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+/* ================== Buttons ================== */
+/* No @apply to avoid Tailwind layer reordering issues */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:16px; padding:12px 20px; font-size:14px; font-weight:600;
+  transition:all .2s ease;
+}
+.btn-primary{
+  background: linear-gradient(90deg, var(--accent), #ff5f3b);
+  color:#fff;
+}
+.btn-primary:hover{ filter:brightness(1.08); }
+.btn-ghost{
+  border:1px solid rgba(255,255,255,.12);
+  color:var(--text);
+}
+.btn-ghost:hover{ background:rgba(255,255,255,.05); }
+
+/* ================== Navbar ================== */
+nav a{ transition: color .15s ease; }
+nav a:hover{ color: var(--accent); }
+
+/* ================== Backgrounds ================== */
 .bg-bg{
   background:
     radial-gradient(1400px 700px at 15% -10%, rgba(65,225,255,.22) 0%, transparent 65%),
     radial-gradient(1200px 600px at 85% -10%, rgba(255,59,107,.20) 0%, transparent 70%),
     #151b34;
 }
-.text-muted{ color: var(--muted); }
 
-/* Cards */
-.card{ background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%); border:1px solid rgba(255,255,255,0.06); border-radius: 16px; }
-.card-glow{ box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); }
-
-/* Buttons (no @apply) */
-.btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  border-radius:16px; padding:12px 20px; font-size:14px; font-weight:600;
-  transition:all .2s ease;
-}
-.btn-primary{ background: linear-gradient(90deg, var(--accent), #ff5f3b); color:#fff; }
-.btn-primary:hover{ filter:brightness(1.08); }
-.btn-ghost{ border:1px solid rgba(255,255,255,.12); color:var(--text); }
-.btn-ghost:hover{ background:rgba(255,255,255,.05); }
-
-/* Hero */
+/* ================== Hero ================== */
 .gradient-hero{
   background:
     radial-gradient(800px 280px at 70% 0%, rgba(63,214,255,.25) 0%, transparent 70%),
     radial-gradient(800px 280px at 20% 0%, rgba(255,45,85,.25) 0%, transparent 70%),
     linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0) 40%);
 }
-.shine{ background: linear-gradient(90deg, #fff, #aee3ff, #fff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.shine{
+  background: linear-gradient(90deg, #fff, #aee3ff, #fff);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
 
-/* Ticker */
+/* ================== Ticker ================== */
 .ticker{ overflow:hidden; white-space:nowrap; }
 .ticker-track{ display:inline-block; animation: ticker 24s linear infinite; }
 @keyframes ticker { from{ transform: translateX(0);} to{ transform: translateX(-50%);} }
 
-/* Misc */
+/* ================== Misc ================== */
 .logo-swatch{
-  background: conic-gradient(from 180deg, var(--accent), var(--accent-2));
-  border-radius: .375rem;
-  height: 1.5rem; width: 1.5rem;
+  background: conic-gradient(from 180deg, var(--accent), var(--accent));
+  border-radius: .375rem; height: 1.5rem; width: 1.5rem;
 }
 
-/* ===== Assistant overrides ===== */
-/* Make all Assistant text black */
+/* ================== Assistant overrides ================== */
+/* Make Assistant text light and placeholders dim */
 #assistant textarea,
 #assistant input,
 #assistant .bg-indigo-800,
 #assistant .bg-indigo-600 { color:#cecaca; }
 
-/* Black placeholders */
 #assistant textarea::placeholder,
 #assistant input::placeholder { color: rgba(202, 197, 197, 0.6); }
 
 /* progress styling */
-.progress {
-  -webkit-appearance: none;
-   appearance: none;
-  background: #e5e7eb; /* gray-200 */
-  border-radius: 9999px;
-  overflow: hidden;
-}
-.progress::-webkit-progress-bar {
-  background: #e5e7eb;
-  border-radius: 9999px;
-}
-.progress::-webkit-progress-value {
-  background: #2563eb; /* blue-600 */
-  border-radius: 9999px;
-  transition: width 300ms;
-}
-.progress::-moz-progress-bar {
-  background: #2563eb;
-  border-radius: 9999px;
-  transition: width 300ms;
-}
+.progress { -webkit-appearance:none; appearance:none; background:#e5e7eb; border-radius:9999px; overflow:hidden; }
+.progress::-webkit-progress-bar { background:#e5e7eb; border-radius:9999px; }
+.progress::-webkit-progress-value { background:#2563eb; border-radius:9999px; transition:width 300ms; }
+.progress::-moz-progress-bar { background:#2563eb; border-radius:9999px; transition:width 300ms; }
 
-/* globals.css */
+/* ================== Hover/Portal Helpers ================== */
 .owner-hover-card {
   position: fixed;
   transform: translate(var(--x, 0), var(--y, 0));
+}
+/* If you later use a hover preview portal */
+.owner-hover-preview {
+  position: fixed;
+  transform: translate(var(--x, 0), var(--y, 0));
+}
+/* bump ticker font size */
+.ticker-track {
+  font-size: 20px;     /* base size ~16px */
+  line-height: 3rem;
 }

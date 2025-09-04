@@ -35,29 +35,29 @@ export const OWNER_PROFILES: OwnerProfile[] = league.owners
 function bioFor(id: string): string {
   switch (id) {
     case "matt_young":
-      return "Plays the wire like chess. Drafts floor, trades for ceiling. Lives for Monday night sweats.";
+      return "Ex-band frontman and ex-commish. Collects helmets and waiver steals. Lives for Monday night sweats.";
     case "brennen_hall":
-      return "Finds value in chaos. Loves rookies and revenge games. Tracks snap counts like a CPA.";
+      return "Chat mind-games savant. Backyard chicken GM. Schedules kids’ carpools between waiver claims.";
     case "michael_vlahovich":
-      return "Tape-first, spreadsheets-second. Streams defenses with spooky accuracy. Never misses waivers.";
+      return "Girl-dad of three and film grinder. Streams defenses with spooky accuracy. Calm when everyone else tilts.";
     case "cole_bixenman":
-      return "Psychological warfare in the group chat. Trades early and often. Always a week ahead on trends.";
+      return "Declares rebuild by Week 2. Talks himself into and out of trades hourly. Deadly when the projections disrespect him.";
     case "matthew_hart":
-      return "Builds bully-ball rosters. Trusts volume over vibes. Known to manifest TDs by sheer will.";
+      return "Lawyered four-peat. Bully-ball lineups, volume truth. Knows the rulebook and the loopholes.";
     case "rob_thomas":
-      return "Veteran of bye-week gymnastics. Values target share and schemes. Quietly stacks wins.";
+      return "Bye-week gymnast. Targets and route-rate guy. Quiet 120 every Sunday.";
     case "thomas_young":
-      return "Boom-bust connoisseur. Loves rookie breakouts. Sets traps with Sunday morning pivots.";
+      return "Boom-bust artiste. Files weekly grievances against kickers and backup RB's.";
     case "davis_johnson":
-      return "Plays the long game. Prioritizes playoff strength. Tracks weather and trench matchups.";
+      return "Variance enjoyer. Drafts vibes, stumbles into Ws. Refuses to roster a DEF until 12:59.";
     case "brad_carter":
-      return "Numbers-first decision maker. Lives in the red zone stats. Calm under tilt pressure.";
+      return "Folk hero. Trades like a tropical storm. Party bus energy, box-score luck not included.";
     case "troy_scott":
-      return "Aggressive trader. Calls breakout weeks before models do. Momentum over reputation.";
+      return "Reigning champ. Claims the website adds +10 morale. Manifests late-game comeback wins.";
     case "brady_kincannon":
-      return "Master of value tiers. Finds edges in usage trends. Never afraid to bench a name brand.";
+      return "Perennial trade champ. Turns bench depth into starter juice. Three offers before brunch.";
     case "andy_fox":
-      return "Adaptable strategist. Reads coach quotes like tea leaves. Turns waiver scraps into starters.";
+      return "Scheme whisperer. Waiver scraps into flex gold. Treats coach quotes like a dataset.";
     default:
       return "Owner profile to be updated. Competitor, tinkerer, and certified primetime tilts enjoyer.";
   }
@@ -68,10 +68,10 @@ function champsFor(id: string): number {
     case "cole_bixenman": return 0;
     case "rob_thomas": return 2;
     case "brady_kincannon": return 0;
-    case "matt_young": return 0;
+    case "matt_young": return 1;
     case "brennen_hall": return 1;
     case "michael_vlahovich": return 1;
-    case "matthew_hart": return 4;
+    case "matthew_hart": return 5;
     case "thomas_young": return 0;
     case "davis_johnson": return 0;
     case "brad_carter": return 0;
@@ -83,18 +83,18 @@ function champsFor(id: string): number {
 
 function favFor(id: string): string {
   switch (id) {
-    case "matt_young": return "Justin Jefferson";
-    case "brennen_hall": return "Patrick Mahomes";
-    case "michael_vlahovich": return "Amon-Ra St. Brown";
-    case "cole_bixenman": return "Christian McCaffrey";
-    case "matthew_hart": return "Ja'Marr Chase";
-    case "rob_thomas": return "Travis Kelce";
+    case "matt_young": return "Shawn Alexander";
+    case "brennen_hall": return "Bijan Robinson";
+    case "michael_vlahovich": return "Antonio Brown";
+    case "cole_bixenman": return "Joe Burrow";
+    case "matthew_hart": return "Justin Jefferson/Lawyer Milloy";
+    case "rob_thomas": return "Gardner Minshew";
     case "thomas_young": return "Derrick Henry";
-    case "davis_johnson": return "Justin Herbert";
+    case "davis_johnson": return "Robbie Cumshot Anderson";
     case "brad_carter": return "Josh Allen";
-    case "troy_scott": return "Tyreek Hill";
-    case "brady_kincannon": return "Josh Allen";
-    case "andy_fox": return "Saquon Barkley";
+    case "troy_scott": return "Bill Croskey";
+    case "brady_kincannon": return "Rome Odunze";
+    case "andy_fox": return "Baker Mayfield";
     default: return "Tom Brady";
   }
 }
@@ -103,17 +103,17 @@ function mascotFor(id: string): string {
   // fun, simple picks; edit anytime
   switch (id) {
     case "matt_young": return "Vikings Skol Viking";
-    case "brennen_hall": return "Chiefs KC Wolf";
-    case "michael_vlahovich": return "Lions Roary";
-    case "cole_bixenman": return "49ers Sourdough Sam";
-    case "matthew_hart": return "Bengals Who Dey";
-    case "rob_thomas": return "Chiefs KC Wolf";
+    case "brennen_hall": return "Pat the Patriot";
+    case "michael_vlahovich": return "Dolphins T.D. the Flipper";
+    case "cole_bixenman": return "Blitz";
+    case "matthew_hart": return "Major Tuddy!";
+    case "rob_thomas": return "Saints Gumbo the Dog";
     case "thomas_young": return "Sir Purr";
     case "davis_johnson": return "Vikings Skol";
     case "brad_carter": return "Bills Billy Buffalo";
-    case "troy_scott": return "Dolphins T.D.";
-    case "brady_kincannon": return "Bills Billy Buffalo";
-    case "andy_fox": return "Giants Victor";
+    case "troy_scott": return "Swagger and Swagger Jr and Swagger III, Go Browns Go";
+    case "brady_kincannon": return "Seahawks Blitz";
+    case "andy_fox": return "Blitz Baby";
     default: return "The Goat";
   }
 }

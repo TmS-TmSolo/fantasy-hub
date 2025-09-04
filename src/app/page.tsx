@@ -1,25 +1,21 @@
 // src/app/page.tsx
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import Hero from "@/components/Hero";
 import Ticker from "@/components/Ticker";
 import Section from "@/components/Section";
 import StatCard from "@/components/StatCard";
-import Cup from "@/components/Cup";
+import NewsSection from "@/components/NewsSection";
 import Footer from "@/components/Footer";
-import VideoPlayer from "@/components/VideoPlayer";
-
-const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
-
-function CupPage() {
-  return <Cup />;
-}
 
 export default async function HomePage() {
   return (
     <>
+      {/* Hero Section - now completely separate with its own video */}
       <Hero />
 
+      {/* Ticker */}
       <Ticker
         items={[
           "• Trade window open - 0 current offers",
@@ -29,24 +25,21 @@ export default async function HomePage() {
         ]}
       />
 
-      <Section title="League Video">
-        {VIDEO_URL ? (
-          <VideoPlayer
-            src={VIDEO_URL}
-            title="League Video"
-            autoPlay
-            muted
-            loop
-            controls
-            className="w-full"
-          />
-        ) : (
-          <div className="text-sm text-gray-600">
-            Set <code>NEXT_PUBLIC_VIDEO_URL</code> to display a video.
-          </div>
-        )}
+      {/* News Section - dedicated component with 3 video cards */}
+      <Section title="Fantasy News">
+        <NewsSection />
       </Section>
 
+      {/* Quick Links */}
+      <Section title="Quick Links">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/tools/league" className="btn btn-ghost h-9">Standings</Link>
+          <Link href="/owners" className="btn btn-primary h-9">Team Profiles</Link>
+          <Link href="/assistant" className="btn btn-ghost h-9">Start/Sit Assistant</Link>
+        </div>
+      </Section>
+
+      {/* This Week Stats */}
       <Section title="This Week">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard title="Power Rank" stat="#1" hint="Girth Brooks" />

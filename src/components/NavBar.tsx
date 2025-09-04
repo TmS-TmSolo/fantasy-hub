@@ -14,6 +14,7 @@ export default function NavBar(){
         <nav className="hidden sm:flex items-center gap-5 text-sm">
           <Link href="/tools/league" className="hover:text-[var(--accent-2)]">League</Link>
           <Link href="/tools/rosters" className="hover:text-[var(--accent-2)]">Rosters</Link>
+          <Link href="/owners" className="hover:text-[var(--accent-2)]">Owner Profiles</Link>
           <Link href="/upload" className="hover:text-[var(--accent-2)]">Upload</Link>
           <Link href="/assistant" className="hover:text-[var(--accent-2)]">Assistant</Link>
           <Link href="/cup" className="btn btn-primary h-9">The Big Cock Cup</Link>
